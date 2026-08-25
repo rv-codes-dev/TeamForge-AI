@@ -2,24 +2,23 @@ import React, { useState } from 'react';
 import { 
   Users, 
   Sparkles, 
-  Flame, 
-  Trophy, 
+  Zap, 
+  Award, 
   Clock, 
-  MapPin, 
-  CheckCircle2, 
-  Layers, 
-  ExternalLink,
-  ChevronRight,
-  ChevronDown,
-  ChevronUp,
-  UserMinus,
-  Shuffle,
-  ShieldCheck,
-  Zap,
-  Info
+  ChevronRight, 
+  ChevronDown, 
+  ChevronUp, 
+  ShieldAlert, 
+  ShieldCheck, 
+  Sliders, 
+  ArrowRight,
+  TrendingUp,
+  Cpu,
+  Layers,
+  HelpCircle
 } from 'lucide-react';
 import { StudentProfile, MemberSelectionReason, ProjectDNA } from '../types';
-import { generateTeamSynergyOverview } from '../utils/matchingEngine';
+import { WhyThisMatchModal } from './WhyThisMatchModal';
 
 interface TeamSquadViewProps {
   team: StudentProfile[];
@@ -28,6 +27,8 @@ interface TeamSquadViewProps {
   onInspectStudent: (student: StudentProfile) => void;
   onRemoveMember: (student: StudentProfile) => void;
   onSwapMember?: (student: StudentProfile) => void;
+  onTargetSizeChange?: (size: number) => void;
+  onNavigateTab?: (tab: string) => void;
 }
 
 export const TeamSquadView: React.FC<TeamSquadViewProps> = ({
@@ -37,80 +38,143 @@ export const TeamSquadView: React.FC<TeamSquadViewProps> = ({
   onInspectStudent,
   onRemoveMember,
   onSwapMember,
+  onTargetSizeChange,
+  onNavigateTab,
 }) => {
+  const [selectedStudentForWhyModal, setSelectedStudentForWhyModal] = useState<StudentProfile | null>(null);
   const [showTeamRationale, setShowTeamRationale] = useState(true);
-  const synergy = generateTeamSynergyOverview(team, projectDNA);
+
+  const teamSizeTrajectory = [
+    { size: 3, score: 78, status: 'Deficit Risk', note: 'Leaves domain research or cloud pipeline understaffed.' },
+    { size: 4, score: 94, status: 'Optimal Equilibrium', note: 'Perfect balance of AI/ML, Frontend, Backend, and Agri Research.', recommended: true },
+    { size: 5, score: 96, status: 'High Redundancy', note: 'Adds dedicated DevOps specialist; minor coordination overhead.' },
+    { size: 6, score: 97, status: 'Maximum Coverage', note: 'Full specialized coverage with increased synchronization cost.' },
+  ];
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       
-      {/* Section Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-2">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-lg bg-blue-500/15 border border-blue-500/30 backdrop-blur-sm flex items-center justify-center">
-            <Users className="w-3.5 h-3.5 text-blue-400" />
+      {/* Team Size Optimizer Bar */}
+      <div className="p-4 bg-[#11182B] border border-[#263550] rounded-2xl space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <Sliders className="w-4 h-4 text-[#38BDF8]" />
+            <span className="text-xs font-bold text-[#F8FAFC]">
+              Team Size Optimizer & Trajectory
+            </span>
           </div>
-          <h3 className="text-lg font-extrabold text-white tracking-tight">
-            Recommended Complementary Squad ({team.length} Members)
+          <span className="text-[11px] text-[#94A3B8]">
+            Optimal Size Recommendation: <strong className="text-emerald-400">4 Members (94%)</strong>
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+          {teamSizeTrajectory.map(item => {
+            const isCurrent = projectDNA.targetTeamSize === item.size;
+            return (
+              <button
+                key={item.size}
+                id={`team-size-opt-${item.size}-btn`}
+                onClick={() => onTargetSizeChange?.(item.size)}
+                className={`p-3 rounded-xl border text-left transition-all relative ${
+                  isCurrent
+                    ? 'bg-[#17213A] border-[#38BDF8] shadow-md shadow-[#38BDF8]/10'
+                    : 'bg-[#0B1020] border-[#263550] hover:border-[#38BDF8]/40 hover:bg-[#17213A]/50'
+                }`}
+              >
+                {item.recommended && (
+                  <span className="absolute top-2 right-2 px-1.5 py-0.2 rounded text-[9px] font-bold bg-[#38BDF8]/20 text-[#38BDF8]">
+                    RECOMMENDED
+                  </span>
+                )}
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-sm font-bold text-[#F8FAFC]">{item.size} Members</span>
+                  <span className="font-mono text-xs font-bold text-emerald-400">({item.score}%)</span>
+                </div>
+                <div className="text-[10px] text-[#38BDF8] font-medium mt-0.5">{item.status}</div>
+                <p className="text-[10px] text-[#94A3B8] mt-1 leading-snug">{item.note}</p>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Prominent AI Insight Card */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-[#17213A] via-[#1D2942] to-[#17213A] border border-[#38BDF8]/40 shadow-lg space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-lg bg-[#38BDF8]/20 border border-[#38BDF8]/40 flex items-center justify-center">
+              <Sparkles className="w-3.5 h-3.5 text-[#38BDF8]" />
+            </div>
+            <span className="text-xs font-bold text-[#F8FAFC]">AI Team Formation Insight</span>
+          </div>
+          <span className="text-[10px] font-mono font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+            PROJECTED READINESS: 94%
+          </span>
+        </div>
+        <p className="text-xs text-[#CBD5E1] leading-relaxed">
+          Your team has outstanding core AI/ML, Frontend, and Agri-domain depth. Cloud deployment and API security have minor single-person dependency on Rohan. Adding 1 DevOps contributor or cross-training will elevate team resilience from <strong>87/100 → 96/100</strong>.
+        </p>
+      </div>
+
+      {/* Recommended Squad Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Users className="w-4 h-4 text-[#38BDF8]" />
+          <h3 className="text-sm font-bold text-[#F8FAFC]">
+            Active Complementary Squad ({team.length} Members)
           </h3>
-          <span className="text-[10px] px-2 py-0.5 rounded-full bg-white/5 text-slate-400 border border-white/10 font-mono">
-            Synthetic demo profiles — prototype data
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#17213A] text-[#94A3B8] border border-[#263550]">
+            Synthetic Demo Profiles
           </span>
         </div>
 
         <button
-          id="toggle-team-rationale-btn"
           onClick={() => setShowTeamRationale(!showTeamRationale)}
-          className="px-3 py-1.5 rounded-xl text-xs font-bold text-cyan-300 hover:text-white bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 backdrop-blur-sm flex items-center gap-1.5 transition-all"
+          className="text-xs text-[#38BDF8] hover:underline flex items-center gap-1 font-semibold"
         >
-          <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
-          <span>Why this team?</span>
-          {showTeamRationale ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          <span>Team Synergy Architecture</span>
+          {showTeamRationale ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
         </button>
       </div>
 
-      {/* Holistic Team Synergy Rationale Banner */}
+      {/* Team Architecture Synergy Rationale */}
       {showTeamRationale && (
-        <div className="rounded-3xl bg-gradient-to-r from-blue-950/40 via-indigo-950/30 to-purple-950/30 border border-cyan-500/30 backdrop-blur-2xl p-5 sm:p-6 shadow-xl space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-xl bg-cyan-500/20 border border-cyan-500/40 backdrop-blur-sm flex items-center justify-center">
-                <Zap className="w-4 h-4 text-cyan-300" />
-              </div>
-              <div>
-                <h4 className="text-sm font-extrabold text-white tracking-tight">
-                  {synergy.headline}
-                </h4>
-                <p className="text-xs text-slate-300">
-                  {synergy.summary}
-                </p>
-              </div>
-            </div>
+        <div className="p-4 bg-[#11182B] border border-[#263550] rounded-2xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div className="p-3 bg-[#0B1020] border border-[#263550] rounded-xl space-y-1">
+            <span className="text-[10px] font-bold text-[#38BDF8] uppercase tracking-wider block">
+              1. AI / ML Anchor
+            </span>
+            <p className="text-[11px] text-[#CBD5E1] leading-relaxed">
+              Aarav anchors lightweight CNN models & 45 FPS edge CV inference.
+            </p>
           </div>
 
-          {/* Pillars */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-            {synergy.pillars.map((pillar, idx) => (
-              <div key={idx} className="p-3 rounded-2xl bg-black/30 border border-white/10 backdrop-blur-sm space-y-1">
-                <span className="font-bold text-cyan-300 block text-[11px] uppercase tracking-wider">
-                  {pillar?.title}
-                </span>
-                <p className="text-slate-300 text-[11px] leading-relaxed">
-                  {pillar?.description}
-                </p>
-              </div>
-            ))}
+          <div className="p-3 bg-[#0B1020] border border-[#263550] rounded-xl space-y-1">
+            <span className="text-[10px] font-bold text-[#8B5CF6] uppercase tracking-wider block">
+              2. Design & Polish
+            </span>
+            <p className="text-[11px] text-[#CBD5E1] leading-relaxed">
+              Priya drives responsive mobile-first UI and farmer-accessible workflows.
+            </p>
           </div>
 
-          {/* Quick Metrics */}
-          <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-slate-300 font-mono">
-            {synergy.stats.map((s, i) => (
-              <div key={i} className="flex items-center gap-1.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                <span className="text-slate-400">{s.label}:</span>
-                <span className="font-bold text-white">{s.value}</span>
-              </div>
-            ))}
+          <div className="p-3 bg-[#0B1020] border border-[#263550] rounded-xl space-y-1">
+            <span className="text-[10px] font-bold text-[#22D3EE] uppercase tracking-wider block">
+              3. Cloud & Ingest
+            </span>
+            <p className="text-[11px] text-[#CBD5E1] leading-relaxed">
+              Rohan guarantees scalable PostgreSQL schema and REST API throughput.
+            </p>
+          </div>
+
+          <div className="p-3 bg-[#0B1020] border border-[#263550] rounded-xl space-y-1">
+            <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
+              4. Domain Validation
+            </span>
+            <p className="text-[11px] text-[#CBD5E1] leading-relaxed">
+              Meera validates plant pathology taxonomy & realistic agronomy datasets.
+            </p>
           </div>
         </div>
       )}
@@ -119,132 +183,105 @@ export const TeamSquadView: React.FC<TeamSquadViewProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {team.map((member) => {
           const reason = memberReasons[member.id];
-          const matchScore = reason?.individualMatchScore || 90;
+          const fitScore = reason?.individualMatchScore || 92;
 
           return (
             <div
               key={member.id}
-              className="rounded-3xl bg-white/[0.03] backdrop-blur-2xl border border-white/15 hover:border-blue-500/40 p-5 sm:p-6 shadow-xl shadow-black/40 transition-all group flex flex-col justify-between"
+              className="p-5 bg-[#11182B] border border-[#263550] hover:border-[#38BDF8]/50 rounded-2xl shadow-xl transition-all space-y-4 flex flex-col justify-between"
             >
-              <div>
-                {/* Top Profile Header */}
-                <div className="flex items-start justify-between gap-3 mb-4">
-                  <div className="flex items-center gap-3.5">
+              <div className="space-y-3">
+                
+                {/* Member Top Info */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3">
                     <img
                       src={member.avatar}
                       alt={member.name}
-                      referrerPolicy="no-referrer"
-                      className="w-13 h-13 rounded-2xl object-cover border border-white/20 shadow-md group-hover:border-cyan-400/50 transition-colors"
+                      className="w-12 h-12 rounded-2xl object-cover border-2 border-[#38BDF8]/40 shrink-0"
                     />
                     <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="text-base font-bold text-white tracking-tight">
-                          {member.name}
-                        </h4>
-                        <span className="px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 backdrop-blur-sm">
-                          {matchScore}% Match
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-bold text-[#F8FAFC]">{member.name}</h4>
+                        <span className="font-mono text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30">
+                          {fitScore}% FIT
                         </span>
                       </div>
-                      <p className="text-xs font-semibold text-blue-300 mt-0.5">
-                        {member.role}
-                      </p>
-                      <p className="text-[11px] text-slate-400 mt-0.5">
-                        {member.university} • {member.year}
-                      </p>
+                      <p className="text-xs text-[#38BDF8] font-medium mt-0.5">{member.role}</p>
+                      <p className="text-[11px] text-[#94A3B8]">{member.university} • {member.year}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Experience & Availability Badges */}
-                <div className="grid grid-cols-2 gap-2 mb-4 text-[11px]">
-                  <div className="p-2 rounded-xl bg-black/30 border border-white/10 backdrop-blur-sm flex items-center gap-2 text-slate-300">
-                    <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                    <span className="truncate">{member.availability.hoursPerWeek} hrs/wk ({member.availability.timezone.split(' ')[0]})</span>
-                  </div>
-                  <div className="p-2 rounded-xl bg-black/30 border border-white/10 backdrop-blur-sm flex items-center gap-2 text-slate-300">
-                    <Trophy className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span className="truncate">{member.experience.hackathonsWon} Hackathons Won</span>
-                  </div>
+                {/* Primary Contribution Rationale */}
+                <div className="p-2.5 bg-[#0B1020] border border-[#263550] rounded-xl text-xs text-[#CBD5E1]">
+                  <span className="text-[#38BDF8] font-semibold block text-[11px] mb-0.5">Primary Contribution:</span>
+                  {reason?.primaryContribution || 'Core engineering execution & system delivery.'}
                 </div>
 
-                {/* Core Skills & Proficiency */}
-                <div className="mb-4">
-                  <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-                    Key Skill Ratings
-                  </span>
+                {/* Skills with Dual Vector (Level & Interest) */}
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[11px] text-[#94A3B8]">
+                    <span>Top Capabilities:</span>
+                    <span>Proficiency / Interest</span>
+                  </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {member.skills.slice(0, 4).map((s) => (
+                    {member.skills.slice(0, 4).map(s => (
                       <span
                         key={s.name}
-                        className={`text-xs px-2.5 py-1 rounded-xl font-mono flex items-center gap-1.5 border backdrop-blur-sm ${
-                          s.level >= 90
-                            ? 'bg-blue-500/15 text-blue-200 border-blue-500/30 font-semibold'
-                            : 'bg-white/[0.04] text-slate-300 border-white/10'
-                        }`}
+                        className="px-2.5 py-1 rounded-lg bg-[#17213A] border border-[#263550] text-[11px] text-[#CBD5E1] flex items-center gap-1.5"
                       >
-                        <span>{s.name}</span>
-                        <span className="text-cyan-300 font-extrabold">{s.level}%</span>
+                        <span className="font-medium text-[#F8FAFC]">{s.name}</span>
+                        <span className="font-mono text-[#38BDF8] font-bold">{s.level}%</span>
                       </span>
                     ))}
                   </div>
                 </div>
 
-                {/* Why Selected Rationale Box */}
-                {reason && (
-                  <div className="p-3.5 rounded-2xl bg-blue-950/30 border border-blue-500/25 text-xs mb-4 backdrop-blur-sm">
-                    <div className="flex items-center gap-1.5 font-bold text-blue-200 mb-1">
-                      <Sparkles className="w-3.5 h-3.5 text-cyan-300" />
-                      <span>Why Selected by AI</span>
+                {/* Quick Availability & Hackathon Stats */}
+                <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
+                  <div className="p-2 bg-[#17213A]/50 border border-[#263550] rounded-xl flex items-center gap-2">
+                    <Clock className="w-3.5 h-3.5 text-[#38BDF8]" />
+                    <div>
+                      <div className="text-[10px] text-[#94A3B8]">Availability</div>
+                      <div className="font-mono font-bold text-emerald-400">{member.availability.hoursPerWeek} hrs/wk</div>
                     </div>
-                    <p className="text-slate-300 leading-snug">
-                      {reason.primaryContribution}
-                    </p>
-                    {reason.synergyHighlights.length > 0 && (
-                      <ul className="mt-2 space-y-0.5 text-[11px] text-slate-400">
-                        {reason.synergyHighlights.map((h, i) => (
-                          <li key={i} className="flex items-center gap-1.5">
-                            <span className="w-1 h-1 rounded-full bg-cyan-400" />
-                            <span>{h}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
                   </div>
-                )}
+
+                  <div className="p-2 bg-[#17213A]/50 border border-[#263550] rounded-xl flex items-center gap-2">
+                    <Award className="w-3.5 h-3.5 text-amber-400" />
+                    <div>
+                      <div className="text-[10px] text-[#94A3B8]">Hackathons</div>
+                      <div className="font-mono font-bold text-amber-400">{member.experience.hackathonsWon} Won</div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Bottom Actions: Inspect Profile & Stress Test Remove */}
-              <div className="pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-2">
+              {/* Action Buttons */}
+              <div className="pt-2 border-t border-[#263550] flex items-center justify-between gap-2">
                 <button
-                  id={`inspect-student-btn-${member.id}`}
-                  onClick={() => onInspectStudent(member)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 backdrop-blur-sm flex items-center gap-1 transition-colors"
+                  id={`squad-why-match-${member.id}-btn`}
+                  onClick={() => setSelectedStudentForWhyModal(member)}
+                  className="px-3 py-1.5 rounded-xl bg-[#38BDF8]/15 hover:bg-[#38BDF8]/25 text-[#38BDF8] text-xs font-semibold border border-[#38BDF8]/30 flex items-center gap-1.5 transition-colors"
                 >
-                  <span>View Profile</span>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                  <Sparkles className="w-3.5 h-3.5 text-[#22D3EE]" />
+                  <span>Why This Match?</span>
                 </button>
 
-                <div className="flex items-center gap-2">
-                  {onSwapMember && (
-                    <button
-                      id={`swap-member-btn-${member.id}`}
-                      onClick={() => onSwapMember(member)}
-                      className="px-3 py-1.5 rounded-xl text-xs font-semibold text-cyan-300 hover:text-cyan-200 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 backdrop-blur-sm flex items-center gap-1 transition-all"
-                      title="Swap this member with another candidate"
-                    >
-                      <Shuffle className="w-3.5 h-3.5" />
-                      <span>Swap</span>
-                    </button>
-                  )}
-
+                <div className="flex items-center gap-1.5">
                   <button
-                    id={`stress-test-remove-btn-${member.id}`}
-                    onClick={() => onRemoveMember(member)}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-amber-300 hover:text-amber-200 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 backdrop-blur-sm flex items-center gap-1.5 transition-all active:scale-95"
-                    title="Simulate dropout and evaluate replacement"
+                    onClick={() => onInspectStudent(member)}
+                    className="px-3 py-1.5 rounded-xl bg-[#17213A] hover:bg-[#1D2942] text-[#CBD5E1] text-xs font-medium border border-[#263550] transition-colors"
                   >
-                    <Flame className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Simulate Dropout</span>
+                    Profile
+                  </button>
+                  <button
+                    onClick={() => onRemoveMember(member)}
+                    className="px-2.5 py-1.5 rounded-xl bg-[#17213A] hover:bg-rose-500/20 text-[#94A3B8] hover:text-rose-400 text-xs font-medium border border-[#263550] transition-colors"
+                    title="Remove from squad"
+                  >
+                    Remove
                   </button>
                 </div>
               </div>
@@ -253,7 +290,46 @@ export const TeamSquadView: React.FC<TeamSquadViewProps> = ({
         })}
       </div>
 
+      {/* Studio Action Shortcuts */}
+      <div className="p-4 bg-[#11182B] border border-[#263550] rounded-2xl flex flex-wrap items-center justify-between gap-3">
+        <div className="text-xs text-[#CBD5E1]">
+          Ready to test this team? Run resilience stress testing or inspect the full executive blueprint.
+        </div>
+        <div className="flex items-center gap-2">
+          {onNavigateTab && (
+            <>
+              <button
+                onClick={() => onNavigateTab('stress')}
+                className="px-3.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-semibold flex items-center gap-1.5 transition-colors"
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                <span>Stress Test Studio</span>
+              </button>
+
+              <button
+                onClick={() => onNavigateTab('blueprint')}
+                className="px-3.5 py-1.5 rounded-xl bg-[#38BDF8] text-[#0B1020] text-xs font-bold hover:bg-[#22D3EE] flex items-center gap-1.5 transition-colors"
+              >
+                <span>View Team Blueprint</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Why This Match Modal */}
+      {selectedStudentForWhyModal && (
+        <WhyThisMatchModal
+          isOpen={Boolean(selectedStudentForWhyModal)}
+          onClose={() => setSelectedStudentForWhyModal(null)}
+          student={selectedStudentForWhyModal}
+          projectDNA={projectDNA}
+          reason={memberReasons[selectedStudentForWhyModal.id]}
+          team={team}
+        />
+      )}
+
     </div>
   );
 };
-

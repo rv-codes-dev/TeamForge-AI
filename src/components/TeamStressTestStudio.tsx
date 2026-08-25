@@ -20,6 +20,7 @@ import {
 import { StudentProfile, ProjectDNA, TeamMetrics, TeamMatchResult } from '../types';
 import { simulateTeamStressTest, calculateTeamMetrics, calculateProjectRisk, calculateSkillCoverage } from '../utils/matchingEngine';
 import { MOCK_STUDENTS } from '../data/mockStudents';
+import { AnimatedNumber } from '../hooks/useCountUp';
 
 interface TeamStressTestStudioProps {
   currentTeam: StudentProfile[];
@@ -230,7 +231,7 @@ export const TeamStressTestStudio: React.FC<TeamStressTestStudioProps> = ({
                     </span>
                     <span className="text-2xl sm:text-3xl font-bold text-slate-400">→</span>
                     <span className="text-4xl sm:text-5xl font-black text-red-400">
-                      {stressResult.degradedMetrics.overallScore}%
+                      <AnimatedNumber value={stressResult.degradedMetrics.overallScore} duration={800} />%
                     </span>
                   </div>
 

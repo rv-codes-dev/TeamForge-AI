@@ -72,7 +72,7 @@ Ensure realistic distribution of AI/ML, Frontend/UI, Backend/Cloud, and Domain/R
             model: 'gemini-3.7-flash',
             contents: prompt,
             config: {
-              systemInstruction: 'You are ProjectMatch AI, a world-class team intelligence system that deconstructs software projects into exact technical and domain skill requirements with importance ratings (0-100%). Output strict JSON according to the schema.',
+              systemInstruction: 'You are TeamForge AI, a world-class team intelligence system that deconstructs software projects into exact technical and domain skill requirements with importance ratings (0-100%). Output strict JSON according to the schema.',
               responseMimeType: 'application/json',
               responseSchema: {
                 type: Type.OBJECT,
@@ -256,7 +256,7 @@ Ensure realistic distribution of AI/ML, Frontend/UI, Backend/Cloud, and Domain/R
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 ProjectMatch server running at http://localhost:${PORT}`);
+    console.log(`🚀 TeamForge AI server running at http://localhost:${PORT}`);
   });
 }
 

@@ -84,7 +84,7 @@ export const FinalTeamReport: React.FC<FinalTeamReportProps> = ({
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 text-cyan-400 text-xs font-mono font-bold uppercase tracking-wider mb-1">
-                <span>PROJECTMATCH INTELLIGENCE REPORT</span>
+                <span>TEAMFORGE AI FORMATION REPORT</span>
                 <span>•</span>
                 <span>ID: {projectDNA.id}</span>
               </div>

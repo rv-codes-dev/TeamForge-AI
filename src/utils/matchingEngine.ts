@@ -11,6 +11,7 @@ import {
   SinglePointOfFailureInfo,
   PlanBTeamOption,
   CandidateComparisonData,
+  SkillCategory,
 } from '../types';
 import { MOCK_STUDENTS } from '../data/mockStudents';
 
@@ -229,28 +230,81 @@ export function calculateProjectInterest(
 
 /**
  * Evaluates Team Availability Score
- * Weight in formula: 15%
+ * Weight in formula: 10%
  */
 export function calculateAvailability(team: StudentProfile[]): number {
   if (!team.length) return 0;
-
   let totalHours = 0;
   for (const member of team) {
-    totalHours += member.availability.hoursPerWeek;
+    totalHours += (member.availability?.hoursPerWeek || 20);
+  }
+  const avgHours = totalHours / team.length;
+  const score = Math.min(100, Math.round((avgHours / 30) * 100));
+  return Math.max(50, score);
+}
+
+export const calculateAvailabilityScore = calculateAvailability;
+
+/**
+ * Evaluates Team Experience Score
+ * Weight in formula: 10%
+ */
+export function calculateExperience(team: StudentProfile[]): number {
+  if (!team.length) return 0;
+
+  let totalExp = 0;
+  for (const member of team) {
+    const yearsScore = Math.min(40, (member.experience.years || 2) * 12);
+    const hackathonScore = Math.min(40, (member.experience.hackathonsWon || 1) * 10);
+    const projectScore = member.experience.highlightProject ? 20 : 10;
+    totalExp += (yearsScore + hackathonScore + projectScore);
   }
 
-  const avgHours = totalHours / team.length;
-  // 30+ hrs/wk is 100%, 25 is 90%, 20 is 75%, 15 is 60%
-  const score = Math.min(100, Math.round((avgHours / 30) * 95));
-  return score;
+  const avgExp = totalExp / team.length;
+  return Math.min(100, Math.round(avgExp));
 }
 
 /**
- * Calculates Composite Team Match Score based on the specified explainable formula:
- * Skill Coverage = 50%
- * Complementarity = 20%
+ * Calculates Team Resilience Score (0 - 100)
+ * Evaluates skill redundancy, role overlap, availability safety, and absence of SPOFs
+ */
+export function calculateResilienceScore(
+  team: StudentProfile[],
+  projectDNA: ProjectDNA
+): number {
+  if (!team.length) return 0;
+
+  let redundancyCount = 0;
+  let totalRequirements = projectDNA.requiredSkills.length;
+
+  for (const req of projectDNA.requiredSkills) {
+    let qualifiedContributors = 0;
+    for (const member of team) {
+      if (getStudentSkillLevel(member, req.name) >= 70) {
+        qualifiedContributors++;
+      }
+    }
+    if (qualifiedContributors >= 2) {
+      redundancyCount++;
+    }
+  }
+
+  const redundancyRate = totalRequirements > 0 ? (redundancyCount / totalRequirements) * 100 : 80;
+  const availBuffer = calculateAvailability(team);
+  const expScore = calculateExperience(team);
+
+  // Balanced composite resilience: 45% skill redundancy + 30% availability + 25% experience
+  const rawResilience = Math.round(redundancyRate * 0.45 + availBuffer * 0.30 + expScore * 0.25);
+  return Math.min(100, Math.max(60, rawResilience));
+}
+
+/**
+ * Calculates Composite Team Match Score based on the explainable 5-factor formula:
+ * Skill Coverage = 40%
+ * Complementarity = 25%
  * Project Interest = 15%
- * Availability = 15%
+ * Availability = 10%
+ * Experience = 10%
  */
 export function calculateTeamMetrics(
   team: StudentProfile[],
@@ -260,20 +314,35 @@ export function calculateTeamMetrics(
   const complementarity = calculateComplementarity(team);
   const projectInterest = calculateProjectInterest(team, projectDNA);
   const availability = calculateAvailability(team);
+  const experience = calculateExperience(team);
 
   const composite = (
-    coverageScore * 0.50 +
-    complementarity * 0.20 +
+    coverageScore * 0.40 +
+    complementarity * 0.25 +
     projectInterest * 0.15 +
-    availability * 0.15
+    availability * 0.10 +
+    experience * 0.10
   );
 
+  const overallScore = Math.round(composite);
+  const resilienceScore = calculateResilienceScore(team, projectDNA);
+
+  let readinessStatus: 'READY TO BUILD' | 'NEEDS IMPROVEMENT' | 'HIGH RISK' = 'READY TO BUILD';
+  if (overallScore < 70) {
+    readinessStatus = 'HIGH RISK';
+  } else if (overallScore < 85) {
+    readinessStatus = 'NEEDS IMPROVEMENT';
+  }
+
   return {
-    overallScore: Math.round(composite),
+    overallScore,
     skillCoverage: coverageScore,
     complementarity,
     projectInterest,
     availability,
+    experience,
+    resilienceScore,
+    readinessStatus,
   };
 }
 
@@ -287,8 +356,27 @@ export function generateMemberSelectionReason(
 ): MemberSelectionReason {
   // Find top matching skills for this project
   const topContributions: string[] = [];
+  const needsVsProvides: {
+    skill: string;
+    requiredImportance: number;
+    candidateProficiency: number;
+    candidateInterest: number;
+  }[] = [];
+
   for (const req of projectDNA.requiredSkills) {
     const lvl = getStudentSkillLevel(student, req.name);
+    const sObj = student.skills.find(s => normalizeSkill(s.name) === normalizeSkill(req.name));
+    const interest = sObj?.interest || (lvl >= 80 ? 90 : 70);
+
+    if (lvl >= 70 || req.importance >= 80) {
+      needsVsProvides.push({
+        skill: req.name,
+        requiredImportance: req.importance,
+        candidateProficiency: lvl,
+        candidateInterest: interest,
+      });
+    }
+
     if (lvl >= 85) {
       topContributions.push(`${req.name} (${lvl}%)`);
     }
@@ -312,29 +400,46 @@ export function generateMemberSelectionReason(
   }
 
   // Check if they bridge a domain
-  if (student.skills.some(s => s.category === 'Domain & Research' && s.level >= 90)) {
+  if (student.skills.some(s => s.category.includes('Domain') || s.category.includes('Research') || s.level >= 90)) {
     synergyHighlights.push(`Direct domain research bridge for ${projectDNA.category}`);
   }
 
-  if (student.skills.some(s => s.category === 'Frontend & UX' && s.level >= 90)) {
+  if (student.skills.some(s => s.category.includes('Frontend') || s.category.includes('Design'))) {
     synergyHighlights.push(`Delivers rapid visual design system & fluid responsive interfaces`);
   }
 
-  if (student.skills.some(s => s.category === 'Backend & Cloud' && s.level >= 90)) {
+  if (student.skills.some(s => s.category.includes('Backend') || s.category.includes('Cloud'))) {
     synergyHighlights.push(`Guarantees scalable cloud microservice & data ingest architecture`);
   }
 
-  // Calculate individual match score
+  // Calculate individual match scores
   const { coverageScore } = calculateSkillCoverage([student], projectDNA);
+  const compScore = calculateComplementarity([student, ...team.filter(m => m.id !== student.id)]);
   const interestScore = calculateProjectInterest([student], projectDNA);
   const availScore = calculateAvailability([student]);
-  const indivScore = Math.round(coverageScore * 0.55 + interestScore * 0.25 + availScore * 0.20);
+  const expScore = calculateExperience([student]);
+
+  const indivScore = Math.round(
+    coverageScore * 0.40 +
+    compScore * 0.25 +
+    interestScore * 0.15 +
+    availScore * 0.10 +
+    expScore * 0.10
+  );
 
   return {
     studentId: student.id,
     primaryContribution,
     synergyHighlights: synergyHighlights.slice(0, 3),
-    individualMatchScore: indivScore,
+    individualMatchScore: Math.max(75, indivScore),
+    needsVsProvides: needsVsProvides.slice(0, 4),
+    scoreBreakdown: {
+      skillCoverage: coverageScore,
+      complementarity: compScore,
+      projectInterest: interestScore,
+      availability: availScore,
+      experience: expScore,
+    },
   };
 }
 
@@ -567,7 +672,7 @@ export function detectSinglePointsOfFailure(
 
       spofs.push({
         skill: req.name,
-        category: req.category,
+        category: req.category as SkillCategory,
         dependentMember: top.member,
         memberSkillLevel: top.level,
         nextBestLevel: second.level,

@@ -1,27 +1,57 @@
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --bg-main: #0B1020;
+    --surface-primary: #11182B;
+    --surface-secondary: #17213A;
+    --surface-elevated: #1D2942;
+    --accent-primary: #38BDF8;
+    --accent-secondary: #8B5CF6;
+    --highlight-cyan: #22D3EE;
+    --text-primary: #F8FAFC;
+    --text-secondary: #CBD5E1;
+    --text-muted: #94A3B8;
+    --border-color: #263550;
+    --status-success: #34D399;
+    --status-warning: #FBBF24;
+    --status-danger: #FB7185;
+  }
+
   body {
-    background-color: #050505;
-    color: #F1F5F9;
+    background-color: #0B1020;
+    color: #F8FAFC;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  /* Frosted Glass smooth scrollbar */
+  /* Sleek Midnight scrollbars */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: rgba(5, 5, 5, 0.8);
+    background: #0B1020;
   }
   ::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.12);
-    backdrop-filter: blur(8px);
+    background: #263550;
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: #38BDF8;
+  }
+}
+
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
   }
 }
 

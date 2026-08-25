@@ -1,59 +1,35 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Navbar 
-} from './components/Navbar';
-import { 
-  LandingHero 
-} from './components/LandingHero';
-import { 
-  ProjectCreator 
-} from './components/ProjectCreator';
-import { 
-  ProjectDNAPanel 
-} from './components/ProjectDNAPanel';
-import { 
-  TeamScoreGauge 
-} from './components/TeamScoreGauge';
-import { 
-  TeamSquadView 
-} from './components/TeamSquadView';
-import { 
-  TeamBlueprint 
-} from './components/TeamBlueprint';
-import { 
-  TaskDecomposition 
-} from './components/TaskDecomposition';
-import { 
-  PlanBTeams 
-} from './components/PlanBTeams';
-import { 
-  CandidateComparison 
-} from './components/CandidateComparison';
-import { 
-  RiskRadar 
-} from './components/RiskRadar';
-import { 
-  FinalTeamReport 
-} from './components/FinalTeamReport';
-import { 
-  SkillCoverageMatrix 
-} from './components/SkillCoverageMatrix';
-import { 
-  TeamStressTestStudio 
-} from './components/TeamStressTestStudio';
-import { 
-  WhatIfStudio 
-} from './components/WhatIfStudio';
-import { 
-  StudentPoolModal 
-} from './components/StudentPoolModal';
-import { 
-  StudentProfileDrawer 
-} from './components/StudentProfileDrawer';
+import { Sidebar } from './components/Sidebar';
+import { Topbar } from './components/Topbar';
+import { LandingHero } from './components/LandingHero';
+import { ProjectCreator } from './components/ProjectCreator';
+import { ProjectDNAPanel } from './components/ProjectDNAPanel';
+import { TeamScoreGauge } from './components/TeamScoreGauge';
+import { TeamSquadView } from './components/TeamSquadView';
+import { TeamBlueprint } from './components/TeamBlueprint';
+import { TaskDecomposition } from './components/TaskDecomposition';
+import { PlanBTeams } from './components/PlanBTeams';
+import { CandidateComparison } from './components/CandidateComparison';
+import { RiskRadar } from './components/RiskRadar';
+import { FinalTeamReport } from './components/FinalTeamReport';
+import { SkillCoverageMatrix } from './components/SkillCoverageMatrix';
+import { TeamStressTestStudio } from './components/TeamStressTestStudio';
+import { WhatIfStudio } from './components/WhatIfStudio';
+import { TalentPoolView } from './components/TalentPoolView';
+import { StudentPoolModal } from './components/StudentPoolModal';
+import { StudentProfileDrawer } from './components/StudentProfileDrawer';
+import { AuthModal } from './components/AuthModal';
+import { ProfileOnboardingModal } from './components/ProfileOnboardingModal';
+import { UserProfileView } from './components/UserProfileView';
+import { EditProfileView } from './components/EditProfileView';
+import { MemberHubView } from './components/MemberHubView';
+import { GroupsView } from './components/GroupsView';
+import { DemoSessionModal } from './components/DemoSessionModal';
 
-import { ProjectDNA, StudentProfile, TeamMatchResult, TeamMetrics, ProjectRiskInfo } from './types';
+import { ProjectDNA, StudentProfile, TeamMatchResult, TeamMetrics, ProjectRiskInfo, UserProfile, TeamGroup, TeamGroupRequest } from './types';
 import { FLAGSHIP_PROJECT, PRESET_PROJECTS } from './data/exampleProjects';
 import { MOCK_STUDENTS } from './data/mockStudents';
+import { INITIAL_TEAM_GROUPS } from './data/mockGroups';
 import { 
   buildOptimalTeam, 
   calculateTeamMetrics, 
@@ -61,32 +37,273 @@ import {
   calculateProjectRisk,
   generateMemberSelectionReason 
 } from './utils/matchingEngine';
-import { 
-  Dna, 
-  Users, 
-  Flame, 
-  ShieldAlert, 
-  Layers, 
-  ArrowLeft, 
-  Sparkles,
-  RefreshCw,
-  Award,
-  ChevronRight,
-  Sliders,
-  CheckSquare,
-  Scale,
-  FileText,
-  ShieldCheck,
-  Zap
-} from 'lucide-react';
+import { Sparkles, Layers, ArrowLeft } from 'lucide-react';
+
+const DEMO_USER: UserProfile = {
+  id: 'demo-user-1',
+  email: 'alex.chen@stanford.edu',
+  fullName: 'Alex Chen',
+  avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+  university: 'Stanford University',
+  department: 'Computer Science (AI Track)',
+  year: 'Senior (Year 4)',
+  bio: 'Passionate about edge computer vision, federated learning, and full-stack AI deployment in resource-constrained environments.',
+  skills: [
+    { name: 'PyTorch', category: 'AI & ML', level: 94, interest: 96, verified: true },
+    { name: 'Computer Vision', category: 'AI & ML', level: 92, interest: 95, verified: true },
+    { name: 'TypeScript / React', category: 'Frontend & UX', level: 88, interest: 85, verified: true },
+    { name: 'FastAPI & Python', category: 'Backend & Cloud', level: 90, interest: 90, verified: true },
+    { name: 'PostgreSQL', category: 'Backend & Cloud', level: 82, interest: 78, verified: true },
+  ],
+  availability: {
+    hoursPerWeek: 30,
+    preferredTimezone: 'UTC-8 (PST)',
+    weekendAvailability: true,
+    customHoursPerWeek: 30,
+  },
+  hackathonsWon: 3,
+  isRealUser: true,
+  isDemo: true,
+  completionPercentage: 96,
+  teamDNA: {
+    technicalStrength: 94,
+    design: 72,
+    research: 88,
+    leadership: 86,
+    collaboration: 92,
+  },
+  githubUrl: 'https://github.com/alexchen-ai',
+  linkedinUrl: 'https://linkedin.com/in/alexchen-ai',
+  portfolioUrl: 'https://alexchen.dev',
+};
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'landing' | 'create' | 'dashboard'>('landing');
-  const [activeTab, setActiveTab] = useState<
-    'squad' | 'blueprint' | 'tasks' | 'planb' | 'compare' | 'stress' | 'risk' | 'whatif' | 'report' | 'skills' | 'dna'
-  >('squad');
+  const [activeTab, setActiveTab] = useState<string>('groups');
+
+  // User Auth & Profile State
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(() => {
+    const saved = localStorage.getItem('projectmatch_user');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { /* ignore */ }
+    }
+    return DEMO_USER;
+  });
+
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signin');
+  const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false);
+  const [isUserProfileViewOpen, setIsUserProfileViewOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDemoExpiredModalOpen, setIsDemoExpiredModalOpen] = useState(false);
+
+  // 10-Minute Demo Sandbox Timer (600 seconds)
+  const isDemoSession = Boolean(
+    currentUser && (currentUser.isDemo || currentUser.id === 'demo-user-1' || currentUser.id === 'user-alex-rivera')
+  );
+
+  const [demoExpiresAt, setDemoExpiresAt] = useState<number | null>(() => {
+    const savedExpires = localStorage.getItem('teamforge_demo_expires_at');
+    if (savedExpires) {
+      const num = parseInt(savedExpires, 10);
+      if (!isNaN(num) && num > Date.now()) {
+        return num;
+      }
+    }
+    // If starting with default demo user
+    const newExpires = Date.now() + 10 * 60 * 1000;
+    localStorage.setItem('teamforge_demo_expires_at', newExpires.toString());
+    return newExpires;
+  });
+
+  const [demoSecondsRemaining, setDemoSecondsRemaining] = useState<number | null>(() => {
+    if (!localStorage.getItem('teamforge_demo_expires_at')) return 600;
+    const exp = parseInt(localStorage.getItem('teamforge_demo_expires_at') || '0', 10);
+    return Math.max(0, Math.ceil((exp - Date.now()) / 1000));
+  });
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!isDemoSession) {
+      setDemoSecondsRemaining(null);
+      return;
+    }
+
+    let targetExpires = demoExpiresAt;
+    if (!targetExpires || targetExpires <= Date.now()) {
+      targetExpires = Date.now() + 10 * 60 * 1000;
+      setDemoExpiresAt(targetExpires);
+      localStorage.setItem('teamforge_demo_expires_at', targetExpires.toString());
+    }
+
+    const updateRemaining = () => {
+      const remainingMs = targetExpires! - Date.now();
+      const remainingSec = Math.max(0, Math.ceil(remainingMs / 1000));
+      setDemoSecondsRemaining(remainingSec);
+
+      if (remainingSec <= 0) {
+        // Expire demo session!
+        localStorage.removeItem('teamforge_demo_expires_at');
+        localStorage.removeItem('projectmatch_user');
+        setCurrentUser(null);
+        setDemoExpiresAt(null);
+        setDemoSecondsRemaining(0);
+        setIsDemoExpiredModalOpen(true);
+        setCurrentView('landing');
+        setScoreNotification('Demo session has ended. Your 10-minute preview has expired.');
+        setTimeout(() => setScoreNotification(null), 6000);
+      }
+    };
+
+    updateRemaining();
+    const interval = setInterval(updateRemaining, 1000);
+    return () => clearInterval(interval);
+  }, [isDemoSession, demoExpiresAt]);
+
+  const handleRestartDemo = () => {
+    const newExpires = Date.now() + 10 * 60 * 1000;
+    setDemoExpiresAt(newExpires);
+    localStorage.setItem('teamforge_demo_expires_at', newExpires.toString());
+    const freshDemo = { ...DEMO_USER, isDemo: true };
+    setCurrentUser(freshDemo);
+    localStorage.setItem('projectmatch_user', JSON.stringify(freshDemo));
+    setDemoSecondsRemaining(600);
+    setIsDemoExpiredModalOpen(false);
+    setCurrentView('dashboard');
+    setActiveTab('groups');
+    setScoreNotification('Fresh 10-minute demo session started!');
+    setTimeout(() => setScoreNotification(null), 3000);
+  };
+
+  // Team Groups & Join Requests State
+  const [teamGroups, setTeamGroups] = useState<TeamGroup[]>(() => {
+    const saved = localStorage.getItem('teamforge_groups');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) { /* ignore */ }
+    }
+    return INITIAL_TEAM_GROUPS;
+  });
+
+  const saveTeamGroups = (updated: TeamGroup[]) => {
+    setTeamGroups(updated);
+    localStorage.setItem('teamforge_groups', JSON.stringify(updated));
+  };
+
+  const handleSendJoinRequest = (
+    groupId: string,
+    requestData: Omit<TeamGroupRequest, 'id' | 'timestamp' | 'status'>
+  ) => {
+    const newRequest: TeamGroupRequest = {
+      ...requestData,
+      id: `req-${Date.now()}`,
+      timestamp: 'Just now',
+      status: 'pending',
+    };
+
+    const updated = teamGroups.map(g => {
+      if (g.id === groupId) {
+        const filtered = g.requests.filter(r => r.userEmail.toLowerCase() !== requestData.userEmail.toLowerCase());
+        return {
+          ...g,
+          requests: [newRequest, ...filtered],
+        };
+      }
+      return g;
+    });
+
+    saveTeamGroups(updated);
+    const targetGroup = teamGroups.find(g => g.id === groupId);
+    setScoreNotification(`Join request sent to ${targetGroup?.leadName} (Team Head of ${targetGroup?.name})!`);
+    setTimeout(() => setScoreNotification(null), 4000);
+  };
+
+  const handleAcceptRequest = (groupId: string, requestId: string) => {
+    const group = teamGroups.find(g => g.id === groupId);
+    const req = group?.requests.find(r => r.id === requestId);
+    if (!group || !req) return;
+
+    const newMember = {
+      id: req.userId,
+      name: req.userName,
+      email: req.userEmail,
+      avatar: req.userAvatar,
+      role: req.requestedRole,
+      isLead: false,
+      joinedAt: 'Just now',
+      skills: req.skills,
+      university: req.userUniversity,
+    };
+
+    const updated = teamGroups.map(g => {
+      if (g.id === groupId) {
+        const alreadyIn = g.members.some(m => m.id === req.userId || m.email?.toLowerCase() === req.userEmail.toLowerCase());
+        const updatedMembers = alreadyIn ? g.members : [...g.members, newMember];
+        const updatedRequests = g.requests.map(r => r.id === requestId ? { ...r, status: 'accepted' as const } : r);
+        return {
+          ...g,
+          members: updatedMembers,
+          requests: updatedRequests,
+          status: updatedMembers.length >= g.maxMembers ? ('full' as const) : g.status,
+        };
+      }
+      return g;
+    });
+
+    saveTeamGroups(updated);
+    setScoreNotification(`Accepted ${req.userName} into ${group.name}! Roster updated.`);
+    setTimeout(() => setScoreNotification(null), 4000);
+  };
+
+  const handleRejectRequest = (groupId: string, requestId: string, reason?: string) => {
+    const group = teamGroups.find(g => g.id === groupId);
+    const req = group?.requests.find(r => r.id === requestId);
+    if (!group || !req) return;
+
+    const updated = teamGroups.map(g => {
+      if (g.id === groupId) {
+        return {
+          ...g,
+          requests: g.requests.map(r => r.id === requestId ? { ...r, status: 'rejected' as const, rejectionReason: reason } : r),
+        };
+      }
+      return g;
+    });
+
+    saveTeamGroups(updated);
+    setScoreNotification(`Declined join request from ${req.userName}.`);
+    setTimeout(() => setScoreNotification(null), 3000);
+  };
+
+  const handleCreateGroup = (newGroupData: Omit<TeamGroup, 'id' | 'createdAt' | 'requests' | 'members'>) => {
+    const newGroup: TeamGroup = {
+      ...newGroupData,
+      id: `group-${Date.now()}`,
+      createdAt: 'Just now',
+      requests: [],
+      members: [
+        {
+          id: newGroupData.leadId,
+          name: newGroupData.leadName,
+          email: newGroupData.leadEmail,
+          avatar: newGroupData.leadAvatar,
+          role: newGroupData.leadRole,
+          isLead: true,
+          joinedAt: 'Just now',
+          skills: currentUser?.skills.map(s => s.name) || ['System Architecture', 'Leadership'],
+          university: currentUser?.university || 'University Student',
+        }
+      ],
+    };
+
+    const updated = [newGroup, ...teamGroups];
+    saveTeamGroups(updated);
+    setActiveTab('groups');
+    setScoreNotification(`Created squad "${newGroup.name}"! You are the Team Head.`);
+    setTimeout(() => setScoreNotification(null), 4000);
+  };
 
   // Active Project & Match State
+  const [allProjects, setAllProjects] = useState<ProjectDNA[]>([FLAGSHIP_PROJECT, ...PRESET_PROJECTS]);
   const [projectDNA, setProjectDNA] = useState<ProjectDNA>(FLAGSHIP_PROJECT);
   const [matchResult, setMatchResult] = useState<TeamMatchResult>(() => buildOptimalTeam(FLAGSHIP_PROJECT, MOCK_STUDENTS, 4));
   const [activeSquad, setActiveSquad] = useState<StudentProfile[]>(matchResult.team);
@@ -98,7 +315,7 @@ export default function App() {
   const [isLoadingAnalysis, setIsLoadingAnalysis] = useState(false);
   const [scoreNotification, setScoreNotification] = useState<string | null>(null);
 
-  // Synchronize result when activeSquad changes
+  // Metrics & Risks
   const currentMetrics = calculateTeamMetrics(activeSquad, projectDNA);
   const { breakdown, gaps } = calculateSkillCoverage(activeSquad, projectDNA);
   const currentRisk: ProjectRiskInfo = calculateProjectRisk(activeSquad, projectDNA, breakdown);
@@ -108,8 +325,68 @@ export default function App() {
     memberReasons[member.id] = generateMemberSelectionReason(member, projectDNA, activeSquad);
   }
 
-  // Action: Launch Flagship Demo Project
+  // Handle Login / Registration success
+  const handleAuthSuccess = (user: UserProfile) => {
+    if (user.isDemo) {
+      const newExpires = Date.now() + 10 * 60 * 1000;
+      setDemoExpiresAt(newExpires);
+      localStorage.setItem('teamforge_demo_expires_at', newExpires.toString());
+      setDemoSecondsRemaining(600);
+    } else {
+      localStorage.removeItem('teamforge_demo_expires_at');
+      setDemoExpiresAt(null);
+      setDemoSecondsRemaining(null);
+    }
+
+    setCurrentUser(user);
+    localStorage.setItem('projectmatch_user', JSON.stringify(user));
+    setIsAuthModalOpen(false);
+    setCurrentView('dashboard');
+    setActiveTab('groups');
+    setScoreNotification(`Welcome, ${user.fullName}! Your TeamForge workspace & Squad Desk are ready.`);
+    setTimeout(() => setScoreNotification(null), 4000);
+    if (!user.teamDNA || (user.completionPercentage || 0) < 60) {
+      setIsOnboardingModalOpen(true);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('projectmatch_user');
+    localStorage.removeItem('teamforge_demo_expires_at');
+    setDemoExpiresAt(null);
+    setDemoSecondsRemaining(null);
+    setCurrentUser(null);
+    setCurrentView('landing');
+    setActiveTab('groups');
+    setScoreNotification('You have been signed out securely. All session credentials removed.');
+    setTimeout(() => setScoreNotification(null), 3000);
+  };
+
+  const handleSaveProfile = (updatedProfile: UserProfile) => {
+    setCurrentUser(updatedProfile);
+    localStorage.setItem('projectmatch_user', JSON.stringify(updatedProfile));
+    setScoreNotification(`Profile & Team DNA updated for ${updatedProfile.fullName}!`);
+    setTimeout(() => setScoreNotification(null), 4000);
+  };
+
+  const handleSaveOnboardingProfile = (updatedProfile: UserProfile) => {
+    setCurrentUser(updatedProfile);
+    localStorage.setItem('projectmatch_user', JSON.stringify(updatedProfile));
+    setIsOnboardingModalOpen(false);
+    setScoreNotification('Profile and Team DNA successfully calibrated!');
+    setTimeout(() => setScoreNotification(null), 4000);
+  };
+
+  // Launch Flagship Demo
   const handleTryDemo = () => {
+    const newExpires = Date.now() + 10 * 60 * 1000;
+    setDemoExpiresAt(newExpires);
+    localStorage.setItem('teamforge_demo_expires_at', newExpires.toString());
+    const freshDemo = { ...DEMO_USER, isDemo: true };
+    setCurrentUser(freshDemo);
+    localStorage.setItem('projectmatch_user', JSON.stringify(freshDemo));
+    setDemoSecondsRemaining(600);
+
     const result = buildOptimalTeam(FLAGSHIP_PROJECT, MOCK_STUDENTS, 4);
     setProjectDNA(FLAGSHIP_PROJECT);
     setMatchResult(result);
@@ -120,7 +397,27 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Action: Analyze custom project idea with Gemini AI or local heuristic
+  // Switch Active Project
+  const handleSelectProject = (proj: ProjectDNA) => {
+    setProjectDNA(proj);
+    const result = buildOptimalTeam(proj, MOCK_STUDENTS, proj.targetTeamSize || 4);
+    setMatchResult(result);
+    setActiveSquad(result.team);
+    setOriginalMetrics(result.metrics);
+  };
+
+  // Change Team Target Size
+  const handleTargetSizeChange = (newSize: number) => {
+    const updatedDNA = { ...projectDNA, targetTeamSize: newSize };
+    setProjectDNA(updatedDNA);
+    const result = buildOptimalTeam(updatedDNA, MOCK_STUDENTS, newSize);
+    setActiveSquad(result.team);
+    setOriginalMetrics(result.metrics);
+    setScoreNotification(`Optimized squad for target team size of ${newSize} members (${result.metrics.overallScore}%)`);
+    setTimeout(() => setScoreNotification(null), 4000);
+  };
+
+  // Analyze Custom Project Idea
   const handleAnalyzeProject = async (projectInput: {
     name: string;
     description: string;
@@ -142,7 +439,6 @@ export default function App() {
         const json = await response.json();
         analyzedDNA = json.data;
       } else {
-        // Fallback DNA
         analyzedDNA = {
           id: `proj-${Date.now()}`,
           title: projectInput.name || 'Custom Innovation Project',
@@ -153,7 +449,7 @@ export default function App() {
           summary: projectInput.description,
           requiredSkills: projectInput.customSkills.map((s, i) => ({
             name: s,
-            importance: Math.max(60, 95 - i * 6),
+            importance: Math.max(65, 95 - i * 6),
             category: i % 2 === 0 ? 'AI & ML' : 'Backend & Cloud',
             description: `Core execution requirement for ${s}`,
           })),
@@ -162,6 +458,7 @@ export default function App() {
         };
       }
 
+      setAllProjects(prev => [analyzedDNA, ...prev]);
       setProjectDNA(analyzedDNA);
       const result = buildOptimalTeam(analyzedDNA, MOCK_STUDENTS, analyzedDNA.targetTeamSize);
       setMatchResult(result);
@@ -171,8 +468,7 @@ export default function App() {
       setCurrentView('dashboard');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
-      console.warn('API call failed, running local engine:', err);
-      // Fallback local match
+      console.warn('API call fallback:', err);
       const fallbackDNA: ProjectDNA = {
         id: `proj-${Date.now()}`,
         title: projectInput.name || 'AgriVision AI Project',
@@ -199,18 +495,16 @@ export default function App() {
     }
   };
 
-  // Action: Replace member in stress test
+  // Replace Member in Stress Test
   const handleApplyReplacement = (oldMemberId: string, newMember: StudentProfile) => {
     const updated = activeSquad.map(m => m.id === oldMemberId ? newMember : m);
     setActiveSquad(updated);
-    
-    // Recalculate metrics
     const newMetrics = calculateTeamMetrics(updated, projectDNA);
     setScoreNotification(`Team Score updated to ${newMetrics.overallScore}%!`);
     setTimeout(() => setScoreNotification(null), 4000);
   };
 
-  // Action: Adopt a Plan B Alternative Squad
+  // Adopt Alternative Squad
   const handleAdoptPlanBTeam = (newTeam: StudentProfile[]) => {
     setActiveSquad(newTeam);
     const newMetrics = calculateTeamMetrics(newTeam, projectDNA);
@@ -218,16 +512,16 @@ export default function App() {
     setTimeout(() => setScoreNotification(null), 4000);
   };
 
-  // Action: Reset squad to original optimal recommendation
+  // Reset Squad
   const handleResetSquad = () => {
     const result = buildOptimalTeam(projectDNA, MOCK_STUDENTS, projectDNA.targetTeamSize || 4);
     setActiveSquad(result.team);
     setOriginalMetrics(result.metrics);
-    setScoreNotification(`Squad reset to original recommendation (${result.metrics.overallScore}%)`);
+    setScoreNotification(`Squad reset to optimal recommendation (${result.metrics.overallScore}%)`);
     setTimeout(() => setScoreNotification(null), 4000);
   };
 
-  // Action: Add specialist to active squad
+  // Add Specialist to Active Squad
   const handleAddBenchMember = (student: StudentProfile) => {
     if (activeSquad.some(m => m.id === student.id)) return;
     const updated = [...activeSquad, student];
@@ -237,7 +531,7 @@ export default function App() {
     setTimeout(() => setScoreNotification(null), 4000);
   };
 
-  // Action: Swap candidate into squad
+  // Swap Candidate
   const handleSwapCandidate = (newCandidate: StudentProfile, oldMemberId?: string) => {
     if (activeSquad.some(m => m.id === newCandidate.id)) return;
     
@@ -245,7 +539,6 @@ export default function App() {
     if (oldMemberId) {
       updated = activeSquad.map(m => m.id === oldMemberId ? newCandidate : m);
     } else if (activeSquad.length >= (projectDNA.targetTeamSize || 4)) {
-      // Replace the last member by default
       updated = [...activeSquad.slice(0, -1), newCandidate];
     } else {
       updated = [...activeSquad, newCandidate];
@@ -258,242 +551,218 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-slate-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-cyan-200 relative overflow-x-hidden">
+    <div className={`min-h-screen bg-[#0B1020] text-[#F8FAFC] flex flex-col font-sans selection:bg-[#38BDF8]/30 selection:text-[#38BDF8] ${currentView === 'dashboard' ? 'h-screen overflow-hidden' : ''}`}>
       
-      {/* Frosted Glass Background Ambient Lighting Orbs */}
-      <div className="fixed top-0 left-1/4 w-[500px] h-[500px] bg-cyan-600/10 rounded-full blur-[140px] pointer-events-none -z-10" />
-      <div className="fixed top-1/3 right-10 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[160px] pointer-events-none -z-10" />
-      <div className="fixed bottom-10 left-10 w-[500px] h-[500px] bg-purple-600/10 rounded-full blur-[140px] pointer-events-none -z-10" />
-
-      {/* Top Sticky Navigation */}
-      <Navbar
-        currentView={currentView}
-        setCurrentView={setCurrentView}
-        onOpenPool={() => setIsStudentPoolOpen(true)}
-        onTryDemo={handleTryDemo}
-        onReset={handleResetSquad}
-        hasActiveProject={Boolean(projectDNA)}
-      />
-
-      {/* Main Content Body */}
-      <main className="flex-1">
-        {currentView === 'landing' && (
-          <LandingHero
-            onBuildTeam={() => setCurrentView('create')}
-            onTryDemo={handleTryDemo}
-            onSelectStudentProfile={(student) => setInspectedStudent(student)}
-          />
-        )}
-
-        {currentView === 'create' && (
-          <ProjectCreator
-            onAnalyzeProject={handleAnalyzeProject}
-            isLoading={isLoadingAnalysis}
-            onSelectPreset={(preset) => {
-              setProjectDNA(preset);
-              const res = buildOptimalTeam(preset, MOCK_STUDENTS, preset.targetTeamSize);
-              setMatchResult(res);
-              setActiveSquad(res.team);
-              setOriginalMetrics(res.metrics);
-            }}
-          />
-        )}
-
-        {currentView === 'dashboard' && (
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-            
-            {/* Top Project Breadcrumb & Quick Info Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white/[0.03] backdrop-blur-xl border border-white/10 shadow-xl shadow-black/40">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setCurrentView('create')}
-                  className="p-2 rounded-xl text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 backdrop-blur-md transition-colors"
-                  title="Edit or create new project"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                </button>
-
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono font-bold text-cyan-400 uppercase tracking-wider">
-                      Active Project
-                    </span>
-                    <span className="text-[11px] text-slate-400 font-mono">• {projectDNA.category}</span>
-                  </div>
-                  <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">
-                    {projectDNA.title}
-                  </h1>
+      {/* View 1: Public Landing Hero */}
+      {currentView === 'landing' && (
+        <div className="flex-1 flex flex-col justify-between">
+          <header className="px-6 py-4 border-b border-[#263550] bg-[#11182B]/60 backdrop-blur-xl flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#38BDF8] to-[#8B5CF6] p-[1.5px] shadow-sm">
+                <div className="w-full h-full bg-[#11182B] rounded-[10px] flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-[#38BDF8]" />
                 </div>
               </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  id="dashboard-new-idea-btn"
-                  onClick={() => setCurrentView('create')}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 backdrop-blur-md transition-colors"
-                >
-                  Change Idea
-                </button>
-                <button
-                  id="dashboard-open-pool-btn"
-                  onClick={() => setIsStudentPoolOpen(true)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 backdrop-blur-md flex items-center gap-1.5 transition-colors"
-                >
-                  <Users className="w-3.5 h-3.5" />
-                  <span>Student Pool</span>
-                </button>
-              </div>
+              <span className="text-sm font-bold text-[#F8FAFC]">
+                TeamForge <span className="text-[#38BDF8]">AI</span>
+              </span>
             </div>
 
-            {/* Score Notification Toast */}
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => {
+                  setAuthModalMode('signin');
+                  setIsAuthModalOpen(true);
+                }}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-[#CBD5E1] hover:text-[#F8FAFC] bg-[#17213A] border border-[#263550] transition-colors"
+              >
+                Sign In
+              </button>
+              <button
+                onClick={handleTryDemo}
+                className="px-3.5 py-1.5 rounded-xl text-xs font-bold text-[#0B1020] bg-gradient-to-r from-[#38BDF8] to-[#22D3EE] hover:opacity-95 transition-all shadow-md shadow-[#38BDF8]/20"
+              >
+                Launch Studio
+              </button>
+            </div>
+          </header>
+
+          <LandingHero
+            onTryDemo={handleTryDemo}
+            onOpenAuth={(mode) => {
+              setAuthModalMode(mode);
+              setIsAuthModalOpen(true);
+            }}
+          />
+
+          <footer className="border-t border-[#263550] py-6 px-6 text-center text-xs text-[#94A3B8] bg-[#0B1020]">
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+              <div className="font-semibold text-[#CBD5E1]">
+                TeamForge AI • "Don't find the best people. Build the best team."
+              </div>
+              <div className="text-[11px] text-[#94A3B8]">
+                Midnight Aurora Design System • Synthetic Profiles for Hackathons & Innovation
+              </div>
+            </div>
+          </footer>
+        </div>
+      )}
+
+      {/* View 2: Project DNA Creator Form */}
+      {currentView === 'create' && (
+        <div className="flex-1 flex flex-col">
+          <header className="px-6 py-4 border-b border-[#263550] bg-[#11182B] flex items-center justify-between">
+            <button
+              onClick={() => setCurrentView('dashboard')}
+              className="flex items-center gap-2 text-xs text-[#94A3B8] hover:text-[#F8FAFC]"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Back to Workspace</span>
+            </button>
+            <span className="text-xs font-bold text-[#F8FAFC]">Deconstruct New Project DNA</span>
+            <div className="w-12" />
+          </header>
+
+          <div className="flex-1 p-6 max-w-4xl mx-auto w-full">
+            <ProjectCreator
+              onAnalyzeProject={handleAnalyzeProject}
+              isLoading={isLoadingAnalysis}
+              onSelectPreset={(preset) => {
+                setProjectDNA(preset);
+                const res = buildOptimalTeam(preset, MOCK_STUDENTS, preset.targetTeamSize);
+                setMatchResult(res);
+                setActiveSquad(res.team);
+                setOriginalMetrics(res.metrics);
+                setCurrentView('dashboard');
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* View 3: SaaS Studio Workspace */}
+      {currentView === 'dashboard' && (
+        <div className="flex-1 flex h-screen w-full overflow-hidden">
+          
+          {/* Left Sidebar (Fixed & Non-moving on the left) */}
+          <div className={`${isMobileMenuOpen ? 'block fixed inset-0 z-40' : 'hidden md:block'} shrink-0 h-screen sticky top-0 left-0`}>
+            <Sidebar
+              activeTab={activeTab}
+              setActiveTab={(tab) => {
+                setActiveTab(tab);
+                setIsMobileMenuOpen(false);
+              }}
+              currentUser={currentUser}
+              activeProject={projectDNA}
+              onOpenAuth={() => {
+                setAuthModalMode('signin');
+                setIsAuthModalOpen(true);
+              }}
+              onOpenProfile={() => {
+                if (currentUser) setIsUserProfileViewOpen(true);
+                else setIsAuthModalOpen(true);
+              }}
+              onLogout={handleLogout}
+              demoSecondsRemaining={demoSecondsRemaining}
+              isDemoSession={isDemoSession}
+            />
+          </div>
+
+          {/* Right Main Canvas (Only this part moves and scrolls) */}
+          <div className="flex-1 flex flex-col min-w-0 bg-[#0B1020] h-screen overflow-hidden">
+            
+            {/* Topbar Header (Fixed top bar on the right canvas) */}
+            <div className="shrink-0 z-20 sticky top-0">
+              <Topbar
+                currentUser={currentUser}
+                activeProject={projectDNA}
+                allProjects={allProjects}
+                onSelectProject={handleSelectProject}
+                onOpenAuth={() => {
+                  setAuthModalMode('signin');
+                  setIsAuthModalOpen(true);
+                }}
+                onOpenProfile={() => {
+                  if (currentUser) setIsUserProfileViewOpen(true);
+                  else setIsAuthModalOpen(true);
+                }}
+                onFastTrackDemo={handleTryDemo}
+                onToggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                demoSecondsRemaining={demoSecondsRemaining}
+                isDemoSession={isDemoSession}
+                onRestartDemo={handleRestartDemo}
+              />
+            </div>
+
+            {/* Notification Toast */}
             {scoreNotification && (
-              <div className="p-3.5 rounded-2xl bg-cyan-950/60 backdrop-blur-xl border border-cyan-400/40 text-cyan-200 text-xs font-semibold flex items-center gap-2 shadow-xl animate-in fade-in slide-in-from-top-2">
-                <Sparkles className="w-4 h-4 text-cyan-300 shrink-0" />
+              <div className="mx-6 mt-4 p-3 rounded-xl bg-[#17213A] border border-[#38BDF8]/40 text-[#38BDF8] text-xs font-semibold flex items-center gap-2 shadow-lg animate-in fade-in shrink-0">
+                <Sparkles className="w-4 h-4 text-[#22D3EE] shrink-0" />
                 <span>{scoreNotification}</span>
               </div>
             )}
 
-            {/* Top Row: Circular Score Gauge (4-Factor Formula) + Project DNA Overview */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              <div className="lg:col-span-6">
-                <TeamScoreGauge
-                  metrics={currentMetrics}
-                  isStressTested={activeSquad.length < (projectDNA.targetTeamSize || 4)}
+            {/* Scrollable View Content (The only scrolling area) */}
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 space-y-6 overscroll-contain">
+              
+              {/* View: Open Squads, Groups & Team Lead Desk */}
+              {activeTab === 'groups' && (
+                <GroupsView
+                  groups={teamGroups}
+                  currentUser={currentUser}
+                  onSendJoinRequest={handleSendJoinRequest}
+                  onAcceptRequest={handleAcceptRequest}
+                  onRejectRequest={handleRejectRequest}
+                  onCreateGroup={handleCreateGroup}
+                  onOpenAuthModal={() => {
+                    setAuthModalMode('signin');
+                    setIsAuthModalOpen(true);
+                  }}
                 />
-              </div>
-              <div className="lg:col-span-6">
-                <ProjectDNAPanel
-                  projectDNA={projectDNA}
-                  onEditProject={() => setCurrentView('create')}
+              )}
+
+              {/* View: Member Hub (Default view after sign-in) */}
+              {activeTab === 'member-hub' && currentUser && (
+                <MemberHubView
+                  currentUser={currentUser}
+                  activeProject={projectDNA}
+                  activeSquad={activeSquad}
+                  onNavigateTab={(tab) => setActiveTab(tab)}
+                  onSelectProject={handleSelectProject}
+                  allProjects={allProjects}
                 />
-              </div>
-            </div>
+              )}
 
-            {/* Primary Dashboard Navigation Tabs */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2 border-b border-white/10 pb-2 overflow-x-auto">
-                <button
-                  id="tab-squad-view-btn"
-                  onClick={() => setActiveTab('squad')}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border whitespace-nowrap ${
-                    activeTab === 'squad'
-                      ? 'bg-cyan-500 text-black border-cyan-400 shadow-md shadow-cyan-500/20'
-                      : 'bg-white/[0.03] text-neutral-300 hover:text-white border-white/10'
-                  }`}
-                >
-                  <Users className="w-3.5 h-3.5" />
-                  <span>Active Squad ({activeSquad.length})</span>
-                </button>
+              {/* View: Dedicated Edit Profile Window / Screen */}
+              {activeTab === 'edit-profile' && currentUser && (
+                <EditProfileView
+                  currentUser={currentUser}
+                  onSaveProfile={handleSaveProfile}
+                  onNavigateTab={(tab) => setActiveTab(tab)}
+                />
+              )}
 
-                <button
-                  id="tab-blueprint-btn"
-                  onClick={() => setActiveTab('blueprint')}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border whitespace-nowrap ${
-                    activeTab === 'blueprint'
-                      ? 'bg-cyan-500 text-black border-cyan-400 shadow-md shadow-cyan-500/20'
-                      : 'bg-white/[0.03] text-neutral-300 hover:text-white border-white/10'
-                  }`}
-                >
-                  <Layers className="w-3.5 h-3.5" />
-                  <span>Team Blueprint</span>
-                </button>
+              {/* Top Overview Cards on Dashboard/Squad View */}
+              {(activeTab === 'squad' || activeTab === 'dashboard') && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                  <div className="lg:col-span-6">
+                    <TeamScoreGauge
+                      metrics={currentMetrics}
+                      isStressTested={activeSquad.length < (projectDNA.targetTeamSize || 4)}
+                      riskInfo={currentRisk}
+                    />
+                  </div>
+                  <div className="lg:col-span-6">
+                    <ProjectDNAPanel
+                      projectDNA={projectDNA}
+                      onEditProject={() => setCurrentView('create')}
+                    />
+                  </div>
+                </div>
+              )}
 
-                <button
-                  id="tab-tasks-btn"
-                  onClick={() => setActiveTab('tasks')}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border whitespace-nowrap ${
-                    activeTab === 'tasks'
-                      ? 'bg-purple-500 text-white border-purple-400 shadow-md shadow-purple-500/20'
-                      : 'bg-white/[0.03] text-neutral-300 hover:text-white border-white/10'
-                  }`}
-                >
-                  <CheckSquare className="w-3.5 h-3.5 text-purple-300" />
-                  <span>Task Pipeline</span>
-                </button>
-
-                <button
-                  id="tab-plan-b-btn"
-                  onClick={() => setActiveTab('planb')}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border whitespace-nowrap ${
-                    activeTab === 'planb'
-                      ? 'bg-blue-500 text-white border-blue-400 shadow-md shadow-blue-500/20'
-                      : 'bg-white/[0.03] text-neutral-300 hover:text-white border-white/10'
-                  }`}
-                >
-                  <Sparkles className="w-3.5 h-3.5 text-blue-300" />
-                  <span>Plan B Teams</span>
-                </button>
-
-                <button
-                  id="tab-candidate-compare-btn"
-                  onClick={() => setActiveTab('compare')}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border whitespace-nowrap ${
-                    activeTab === 'compare'
-                      ? 'bg-emerald-500 text-black border-emerald-400 shadow-md shadow-emerald-500/20'
-                      : 'bg-white/[0.03] text-neutral-300 hover:text-white border-white/10'
-                  }`}
-                >
-                  <Scale className="w-3.5 h-3.5" />
-                  <span>Compare Candidates</span>
-                </button>
-
-                <button
-                  id="tab-stress-test-btn"
-                  onClick={() => setActiveTab('stress')}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border whitespace-nowrap ${
-                    activeTab === 'stress'
-                      ? 'bg-amber-500 text-black border-amber-400 shadow-md shadow-amber-500/20'
-                      : 'bg-white/[0.03] text-neutral-300 hover:text-white border-white/10'
-                  }`}
-                >
-                  <Flame className="w-3.5 h-3.5 text-amber-400" />
-                  <span>Stress Test</span>
-                </button>
-
-                <button
-                  id="tab-risk-radar-btn"
-                  onClick={() => setActiveTab('risk')}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border whitespace-nowrap ${
-                    activeTab === 'risk'
-                      ? 'bg-rose-500 text-white border-rose-400 shadow-md shadow-rose-500/20'
-                      : 'bg-white/[0.03] text-neutral-300 hover:text-white border-white/10'
-                  }`}
-                >
-                  <ShieldAlert className="w-3.5 h-3.5 text-rose-400" />
-                  <span>Risk Radar & SPOF</span>
-                </button>
-
-                <button
-                  id="tab-what-if-btn"
-                  onClick={() => setActiveTab('whatif')}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border whitespace-nowrap ${
-                    activeTab === 'whatif'
-                      ? 'bg-cyan-500/30 text-cyan-300 border-cyan-400 shadow-md shadow-cyan-500/20'
-                      : 'bg-white/[0.03] text-neutral-300 hover:text-white border-white/10'
-                  }`}
-                >
-                  <Sliders className="w-3.5 h-3.5 text-cyan-300" />
-                  <span>What-If?</span>
-                </button>
-
-                <button
-                  id="tab-final-report-btn"
-                  onClick={() => setActiveTab('report')}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border whitespace-nowrap ${
-                    activeTab === 'report'
-                      ? 'bg-indigo-500 text-white border-indigo-400 shadow-md shadow-indigo-500/20'
-                      : 'bg-white/[0.03] text-neutral-300 hover:text-white border-white/10'
-                  }`}
-                >
-                  <FileText className="w-3.5 h-3.5 text-indigo-300" />
-                  <span>Executive Dossier</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Active Tab Views */}
-            {activeTab === 'squad' && (
-              <div className="space-y-8">
+              {/* View Routing */}
+              {(activeTab === 'squad' || activeTab === 'dashboard') && (
                 <TeamSquadView
                   team={activeSquad}
                   projectDNA={projectDNA}
@@ -501,147 +770,174 @@ export default function App() {
                   onInspectStudent={(s) => setInspectedStudent(s)}
                   onRemoveMember={(s) => {
                     setActiveTab('stress');
-                    window.scrollTo({ top: 400, behavior: 'smooth' });
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   onSwapMember={(s) => {
                     setActiveTab('stress');
-                    window.scrollTo({ top: 400, behavior: 'smooth' });
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  onTargetSizeChange={handleTargetSizeChange}
+                  onNavigateTab={(t) => setActiveTab(t)}
+                />
+              )}
+
+              {activeTab === 'projects' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-base font-bold text-[#F8FAFC]">Project DNA Architecture</h2>
+                    <button
+                      onClick={() => setCurrentView('create')}
+                      className="px-4 py-2 rounded-xl bg-[#38BDF8] text-[#0B1020] text-xs font-bold hover:bg-[#22D3EE] transition-colors"
+                    >
+                      + Deconstruct New Project
+                    </button>
+                  </div>
+                  <ProjectDNAPanel
+                    projectDNA={projectDNA}
+                    onEditProject={() => setCurrentView('create')}
+                  />
+                </div>
+              )}
+
+              {activeTab === 'pool' && (
+                <TalentPoolView
+                  activeProjectDNA={projectDNA}
+                  activeTeam={activeSquad}
+                  onSelectStudent={(s) => setInspectedStudent(s)}
+                  onAddSpecialistToTeam={handleAddBenchMember}
+                  onCompareStudent={(s) => {
+                    setActiveTab('compare');
                   }}
                 />
+              )}
 
-                {/* Embedded Stress Test Preview Banner */}
-                <div className="p-6 rounded-3xl bg-gradient-to-r from-amber-950/20 to-black/40 backdrop-blur-2xl border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0">
-                      <Flame className="w-5 h-5 text-amber-400" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-bold text-white tracking-tight">
-                        Simulate Team Dropout & Resilience
-                      </h4>
-                      <p className="text-xs text-slate-300 mt-0.5">
-                        Test what happens if a core engineer leaves, review immediate score degradation, and deploy optimal replacements.
-                      </p>
-                    </div>
-                  </div>
+              {activeTab === 'blueprint' && (
+                <TeamBlueprint
+                  projectDNA={projectDNA}
+                  team={activeSquad}
+                  onSelectStudent={(s) => setInspectedStudent(s)}
+                />
+              )}
 
-                  <button
-                    id="trigger-stress-tab-from-squad-btn"
-                    onClick={() => setActiveTab('stress')}
-                    className="px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-amber-950 bg-amber-400 hover:bg-amber-300 shadow-lg shadow-amber-400/20 transition-all shrink-0 flex items-center gap-1.5 active:scale-95 cursor-pointer"
-                  >
-                    <span>Launch Stress Test Studio</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            )}
+              {activeTab === 'tasks' && (
+                <TaskDecomposition
+                  projectDNA={projectDNA}
+                  team={activeSquad}
+                  onFindSpecialist={(skill) => {
+                    setIsStudentPoolOpen(true);
+                  }}
+                />
+              )}
 
-            {activeTab === 'blueprint' && (
-              <TeamBlueprint
-                projectDNA={projectDNA}
-                team={activeSquad}
-                onSelectStudent={(s) => setInspectedStudent(s)}
-              />
-            )}
+              {activeTab === 'skills' && (
+                <SkillCoverageMatrix
+                  breakdown={breakdown}
+                  gaps={gaps}
+                  riskInfo={currentRisk}
+                  onAddBenchMember={handleAddBenchMember}
+                  onInspectStudent={(s) => setInspectedStudent(s)}
+                />
+              )}
 
-            {activeTab === 'tasks' && (
-              <TaskDecomposition
-                projectDNA={projectDNA}
-                team={activeSquad}
-                onFindSpecialist={(skill) => {
-                  setIsStudentPoolOpen(true);
-                }}
-              />
-            )}
+              {activeTab === 'health' && (
+                <RiskRadar
+                  projectDNA={projectDNA}
+                  team={activeSquad}
+                  onSelectStudent={(s) => setInspectedStudent(s)}
+                  onSimulateDropout={(studentId) => {
+                    setActiveTab('stress');
+                  }}
+                />
+              )}
 
-            {activeTab === 'planb' && (
-              <PlanBTeams
-                projectDNA={projectDNA}
-                activeSquad={activeSquad}
-                onAdoptTeam={handleAdoptPlanBTeam}
-                onSelectStudent={(s) => setInspectedStudent(s)}
-              />
-            )}
+              {activeTab === 'stress' && (
+                <TeamStressTestStudio
+                  currentTeam={activeSquad}
+                  projectDNA={projectDNA}
+                  originalMetrics={originalMetrics}
+                  onApplyReplacement={handleApplyReplacement}
+                  onResetSquad={handleResetSquad}
+                  onInspectStudent={(s) => setInspectedStudent(s)}
+                />
+              )}
 
-            {activeTab === 'compare' && (
-              <CandidateComparison
-                projectDNA={projectDNA}
-                activeSquad={activeSquad}
-                onSwapCandidate={handleSwapCandidate}
-                onSelectStudent={(s) => setInspectedStudent(s)}
-              />
-            )}
+              {activeTab === 'planb' && (
+                <PlanBTeams
+                  projectDNA={projectDNA}
+                  activeSquad={activeSquad}
+                  onAdoptTeam={handleAdoptPlanBTeam}
+                  onSelectStudent={(s) => setInspectedStudent(s)}
+                />
+              )}
 
-            {activeTab === 'stress' && (
-              <TeamStressTestStudio
-                currentTeam={activeSquad}
-                projectDNA={projectDNA}
-                originalMetrics={originalMetrics}
-                onApplyReplacement={handleApplyReplacement}
-                onResetSquad={handleResetSquad}
-                onInspectStudent={(s) => setInspectedStudent(s)}
-              />
-            )}
+              {activeTab === 'compare' && (
+                <CandidateComparison
+                  projectDNA={projectDNA}
+                  activeSquad={activeSquad}
+                  onSwapCandidate={handleSwapCandidate}
+                  onSelectStudent={(s) => setInspectedStudent(s)}
+                />
+              )}
 
-            {activeTab === 'risk' && (
-              <RiskRadar
-                projectDNA={projectDNA}
-                team={activeSquad}
-                onSelectStudent={(s) => setInspectedStudent(s)}
-                onSimulateDropout={(studentId) => {
-                  setActiveTab('stress');
-                  window.scrollTo({ top: 350, behavior: 'smooth' });
-                }}
-              />
-            )}
+              {activeTab === 'risk' && (
+                <RiskRadar
+                  projectDNA={projectDNA}
+                  team={activeSquad}
+                  onSelectStudent={(s) => setInspectedStudent(s)}
+                  onSimulateDropout={(studentId) => {
+                    setActiveTab('stress');
+                  }}
+                />
+              )}
 
-            {activeTab === 'whatif' && (
-              <WhatIfStudio
-                currentTeam={activeSquad}
-                projectDNA={projectDNA}
-                onApplySquad={(newSquad) => {
-                  setActiveSquad(newSquad);
-                  const newMetrics = calculateTeamMetrics(newSquad, projectDNA);
-                  setScoreNotification(`Applied new squad composition! Team Score is now ${newMetrics.overallScore}%.`);
-                  setTimeout(() => setScoreNotification(null), 4000);
-                  setActiveTab('squad');
-                }}
-                onResetSquad={handleResetSquad}
-                onInspectStudent={(s) => setInspectedStudent(s)}
-              />
-            )}
+              {activeTab === 'report' && (
+                <FinalTeamReport
+                  projectDNA={projectDNA}
+                  team={activeSquad}
+                  metrics={currentMetrics}
+                />
+              )}
 
-            {activeTab === 'report' && (
-              <FinalTeamReport
-                projectDNA={projectDNA}
-                team={activeSquad}
-                metrics={currentMetrics}
-              />
-            )}
-
-            {activeTab === 'skills' && (
-              <SkillCoverageMatrix
-                breakdown={breakdown}
-                gaps={gaps}
-                riskInfo={currentRisk}
-                onAddBenchMember={handleAddBenchMember}
-                onInspectStudent={(s) => setInspectedStudent(s)}
-              />
-            )}
-
-            {activeTab === 'dna' && (
-              <ProjectDNAPanel
-                projectDNA={projectDNA}
-                onEditProject={() => setCurrentView('create')}
-              />
-            )}
-
+            </div>
           </div>
-        )}
-      </main>
+        </div>
+      )}
 
-      {/* Student Pool Directory Modal */}
+      {/* Global Modals */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
+        initialMode={authModalMode}
+      />
+
+      <ProfileOnboardingModal
+        isOpen={isOnboardingModalOpen}
+        onClose={() => setIsOnboardingModalOpen(false)}
+        currentUser={currentUser || DEMO_USER}
+        onSaveProfile={handleSaveOnboardingProfile}
+      />
+
+      {currentUser && (
+        <UserProfileView
+          isOpen={isUserProfileViewOpen}
+          onClose={() => setIsUserProfileViewOpen(false)}
+          currentUser={currentUser}
+          onUpdateAvatar={(newAvatar) => {
+            const updated = { ...currentUser, avatar: newAvatar };
+            setCurrentUser(updated);
+            localStorage.setItem('projectmatch_user', JSON.stringify(updated));
+            setScoreNotification('Profile picture updated successfully!');
+            setTimeout(() => setScoreNotification(null), 3000);
+          }}
+          onEditProfile={() => {
+            setIsUserProfileViewOpen(false);
+            setCurrentView('dashboard');
+            setActiveTab('edit-profile');
+          }}
+        />
+      )}
+
       <StudentPoolModal
         isOpen={isStudentPoolOpen}
         onClose={() => setIsStudentPoolOpen(false)}
@@ -653,25 +949,29 @@ export default function App() {
         activeTeam={activeSquad}
       />
 
-      {/* Student Candidate Dossier Drawer */}
       <StudentProfileDrawer
         student={inspectedStudent}
         onClose={() => setInspectedStudent(null)}
         activeProjectDNA={projectDNA}
       />
 
-      {/* Minimal Footer */}
-      <footer className="border-t border-white/10 py-6 text-center text-xs text-neutral-400 bg-black/30 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-neutral-200">ProjectMatch</span>
-            <span>— AI Team Formation Platform</span>
-          </div>
-          <div className="font-mono text-[11px] text-neutral-500">
-            "Don't find the best people. Build the best team." • Synthetic demo profiles — prototype data
-          </div>
-        </div>
-      </footer>
+      {/* 10-Minute Demo Expiration Modal */}
+      <DemoSessionModal
+        isOpen={isDemoExpiredModalOpen}
+        onClose={() => setIsDemoExpiredModalOpen(false)}
+        onOpenSignUp={() => {
+          setAuthModalMode('signup');
+          setIsAuthModalOpen(true);
+        }}
+        onOpenSignIn={() => {
+          setAuthModalMode('signin');
+          setIsAuthModalOpen(true);
+        }}
+        onRestartDemo={handleRestartDemo}
+        onGoToLanding={() => {
+          setCurrentView('landing');
+        }}
+      />
 
     </div>
   );

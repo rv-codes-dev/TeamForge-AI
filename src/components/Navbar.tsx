@@ -35,10 +35,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-lg tracking-tight text-white group-hover:text-cyan-200 transition-colors">
-                  ProjectMatch
+                  TeamForge AI
                 </span>
                 <span className="text-[10px] uppercase font-semibold tracking-wider px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20 backdrop-blur-sm font-mono">
-                  AI Synergy
+                  Synergy
                 </span>
               </div>
             </div>
