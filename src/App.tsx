@@ -25,6 +25,7 @@ import { EditProfileView } from './components/EditProfileView';
 import { MemberHubView } from './components/MemberHubView';
 import { GroupsView } from './components/GroupsView';
 import { DemoSessionModal } from './components/DemoSessionModal';
+import { DemoVerificationModal } from './components/DemoVerificationModal';
 
 import { ProjectDNA, StudentProfile, TeamMatchResult, TeamMetrics, ProjectRiskInfo, UserProfile, TeamGroup, TeamGroupRequest } from './types';
 import { FLAGSHIP_PROJECT, PRESET_PROJECTS } from './data/exampleProjects';
@@ -96,6 +97,7 @@ export default function App() {
   const [isUserProfileViewOpen, setIsUserProfileViewOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDemoExpiredModalOpen, setIsDemoExpiredModalOpen] = useState(false);
+  const [isDemoVerificationOpen, setIsDemoVerificationOpen] = useState(false);
 
   // 10-Minute Demo Sandbox Timer (600 seconds)
   const isDemoSession = Boolean(
@@ -159,21 +161,6 @@ export default function App() {
     const interval = setInterval(updateRemaining, 1000);
     return () => clearInterval(interval);
   }, [isDemoSession, demoExpiresAt]);
-
-  const handleRestartDemo = () => {
-    const newExpires = Date.now() + 10 * 60 * 1000;
-    setDemoExpiresAt(newExpires);
-    localStorage.setItem('teamforge_demo_expires_at', newExpires.toString());
-    const freshDemo = { ...DEMO_USER, isDemo: true };
-    setCurrentUser(freshDemo);
-    localStorage.setItem('projectmatch_user', JSON.stringify(freshDemo));
-    setDemoSecondsRemaining(600);
-    setIsDemoExpiredModalOpen(false);
-    setCurrentView('dashboard');
-    setActiveTab('groups');
-    setScoreNotification('Fresh 10-minute demo session started!');
-    setTimeout(() => setScoreNotification(null), 3000);
-  };
 
   // Team Groups & Join Requests State
   const [teamGroups, setTeamGroups] = useState<TeamGroup[]>(() => {
@@ -377,12 +364,28 @@ export default function App() {
     setTimeout(() => setScoreNotification(null), 4000);
   };
 
-  // Launch Flagship Demo
+  // Trigger Demo Session Verification Flow
   const handleTryDemo = () => {
+    setIsDemoVerificationOpen(true);
+  };
+
+  const handleRestartDemo = () => {
+    setIsDemoExpiredModalOpen(false);
+    setIsDemoVerificationOpen(true);
+  };
+
+  // Called when Demo OTP code is verified
+  const handleDemoVerificationSuccess = (demoData: { email: string; fullName: string }) => {
     const newExpires = Date.now() + 10 * 60 * 1000;
     setDemoExpiresAt(newExpires);
     localStorage.setItem('teamforge_demo_expires_at', newExpires.toString());
-    const freshDemo = { ...DEMO_USER, isDemo: true };
+    const freshDemo: UserProfile = { 
+      ...DEMO_USER, 
+      id: `demo-${Date.now()}`,
+      fullName: demoData.fullName || 'Demo Explorer',
+      email: demoData.email,
+      isDemo: true 
+    };
     setCurrentUser(freshDemo);
     localStorage.setItem('projectmatch_user', JSON.stringify(freshDemo));
     setDemoSecondsRemaining(600);
@@ -395,6 +398,8 @@ export default function App() {
     setActiveTab('squad');
     setCurrentView('dashboard');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    setScoreNotification(`Email verified for ${demoData.email}! 10-Minute Demo Sandbox Activated.`);
+    setTimeout(() => setScoreNotification(null), 5000);
   };
 
   // Switch Active Project
@@ -953,6 +958,23 @@ export default function App() {
         student={inspectedStudent}
         onClose={() => setInspectedStudent(null)}
         activeProjectDNA={projectDNA}
+      />
+
+      {/* Demo Email & OTP Verification Modal */}
+      <DemoVerificationModal
+        isOpen={isDemoVerificationOpen}
+        onClose={() => setIsDemoVerificationOpen(false)}
+        onVerificationSuccess={handleDemoVerificationSuccess}
+        onOpenSignUp={() => {
+          setIsDemoVerificationOpen(false);
+          setAuthModalMode('signup');
+          setIsAuthModalOpen(true);
+        }}
+        onOpenSignIn={() => {
+          setIsDemoVerificationOpen(false);
+          setAuthModalMode('signin');
+          setIsAuthModalOpen(true);
+        }}
       />
 
       {/* 10-Minute Demo Expiration Modal */}
