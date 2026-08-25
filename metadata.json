@@ -1,0 +1,6 @@
+{
+  "name": "ProjectMatch",
+  "description": "AI-powered team formation platform for college students, hackathons, competitions, research projects, and startups.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
