@@ -77,7 +77,7 @@ export const WhyThisMatchModal: React.FC<WhyThisMatchModalProps> = ({
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#1D2942] transition-colors"
-          >
+           aria-label="Close">
             <X className="w-5 h-5" />
           </button>
         </div>

@@ -210,7 +210,7 @@ export const DemoVerificationModal: React.FC<DemoVerificationModalProps> = ({
           type="button"
           onClick={onClose}
           className="absolute top-4 right-4 p-2 rounded-xl bg-[#17213A] text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#1D2942] transition-colors z-20 cursor-pointer"
-        >
+         aria-label="Close">
           <X className="w-4 h-4" />
         </button>
 

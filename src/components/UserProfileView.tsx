@@ -83,19 +83,19 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
               </p>
               <div className="flex items-center gap-3 mt-2 text-xs text-[#CBD5E1]">
                 {currentUser.githubUrl && (
-                  <a href={currentUser.githubUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-[#38BDF8] transition-colors">
+                  <a href={currentUser.githubUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-[#38BDF8] transition-colors">
                     <Github className="w-3.5 h-3.5" />
                     <span>GitHub</span>
                   </a>
                 )}
                 {currentUser.linkedinUrl && (
-                  <a href={currentUser.linkedinUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-[#38BDF8] transition-colors">
+                  <a href={currentUser.linkedinUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-[#38BDF8] transition-colors">
                     <Linkedin className="w-3.5 h-3.5" />
                     <span>LinkedIn</span>
                   </a>
                 )}
                 {currentUser.portfolioUrl && (
-                  <a href={currentUser.portfolioUrl} target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-[#22D3EE] transition-colors">
+                  <a href={currentUser.portfolioUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-[#22D3EE] transition-colors">
                     <Globe className="w-3.5 h-3.5" />
                     <span>Portfolio</span>
                   </a>
@@ -116,7 +116,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
             <button
               onClick={onClose}
               className="p-1.5 rounded-lg text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-[#1D2942] transition-colors"
-            >
+             aria-label="Close">
               <X className="w-5 h-5" />
             </button>
           </div>

@@ -89,7 +89,7 @@ export const StudentPoolModal: React.FC<StudentPoolModalProps> = ({
             id="close-student-pool-modal-btn"
             onClick={onClose}
             className="p-2 rounded-xl text-slate-400 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 backdrop-blur-sm transition-colors cursor-pointer"
-          >
+           aria-label="Close">
             <X className="w-5 h-5" />
           </button>
         </div>
